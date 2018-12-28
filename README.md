@@ -1,1 +1,1 @@
-# http-log-monitoring-console-program
+# HTTP Log Monitoring Console Program
