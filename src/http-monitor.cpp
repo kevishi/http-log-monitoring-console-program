@@ -3,6 +3,10 @@
 #include <boost/program_options.hpp>
 #include <chrono>
 #include <thread>
+
+#include "cyclic-buffer.h"
+
+using namespace HttpMonitorHelper;
 using namespace std;
 namespace po = boost::program_options;
 
