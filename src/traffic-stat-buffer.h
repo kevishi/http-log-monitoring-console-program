@@ -11,10 +11,13 @@ namespace HttpMonitorHelper
         public CyclicBuffer<TrafficUnit>
     {
         private:
-            int m_beat;
+            int m_interval;
             int m_totalTraffic = 0;
         public:
             TrafficBuffer(int interval, int beat);
+
+            // TrafficBuffer::insert(data)
+            //  Inserts data into buffer, updates traffic data
             void insert(TrafficUnit data);
     };
 }

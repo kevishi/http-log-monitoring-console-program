@@ -5,6 +5,7 @@
 // CyclicBuffer<T>(size)
 //  Buffer that holds size number of T (at maximum)
 //  Any additional T added will remove first added element
+//  0 size is undefined behavior
 template<typename T>
 class CyclicBuffer
 {
@@ -19,9 +20,6 @@ class CyclicBuffer
         // CyclicBuffer::insert(data)
         //  Inserts data into buffer, returns popped element if necessary
         std::experimental::optional<T> insert(T data);
-
-        //TODO remove
-        int get();
 };
 
 // template definition
@@ -45,10 +43,4 @@ std::experimental::optional<T> CyclicBuffer<T>::insert(T data)
     m_curSize++;
 
     return poppedElement;
-}
-
-template<typename T>
-int CyclicBuffer<T>::get()
-{
-    return 5;
 }
