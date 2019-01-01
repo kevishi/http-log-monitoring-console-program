@@ -11,7 +11,6 @@ namespace HttpMonitorHelper
         public CyclicBuffer<TrafficUnit>
     {
         private:
-            int m_interval;
             int m_totalTraffic = 0;
         public:
             TrafficBuffer(int interval, int beat);

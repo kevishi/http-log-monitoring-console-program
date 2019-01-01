@@ -4,10 +4,18 @@
 #include <chrono>
 #include <thread>
 
-#include "cyclic-buffer.h"
-
 using namespace std;
 namespace po = boost::program_options;
+
+struct CLF
+{
+  string addr;
+  string user;
+  string time;
+  string request;
+  int status;
+  int size;
+};
 
 int main(int argc, char *argv[])
 {

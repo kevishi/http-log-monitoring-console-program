@@ -4,8 +4,8 @@ using namespace HttpMonitorHelper;
 
 typedef std::experimental::optional<AlertUnit> o_AlertUnit;
 
-AlertBuffer::AlertBuffer(int interval, int beat, int alertMin):
-    CyclicBuffer(beat), m_interval(interval), m_alertMin(alertMin)
+AlertBuffer::AlertBuffer(int size, int alertMin):
+    CyclicBuffer(size), m_alertMin(alertMin)
 {
 }
 
