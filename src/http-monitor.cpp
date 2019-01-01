@@ -51,11 +51,21 @@ void HttpMonitor::parseLog()
 
   char* line = NULL;
   size_t len = 0;
-  while ((getline(&line, &len, fp)) != -1) {
-      // using printf() in all tests for consistency
-      printf("%s", line);
+  int numLines = 0;
+  while (true) {
+      // I would want to extend this to be able to be safely interrupted with a key
+      if (getline(&line, &len, fp) != -1)
+      {
+        printf("%s", line);
+      }
+      else
+      {
+        this_thread::sleep_for(chrono::seconds(1));
+      }
   }
-  fclose(fp);
-  if (line)
-      free(line);
+  // Cleanup code that I would use if I was using polling
+  // TODO uncomment after adding polling
+  // fclose(fp);
+  // if (line)
+  //     free(line);
 }

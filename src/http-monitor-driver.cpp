@@ -1,8 +1,7 @@
 #include <iostream>
 #include <string>
 #include <boost/program_options.hpp>
-#include <chrono>
-#include <thread>
+#include "http-monitor.h"
 
 using namespace std;
 namespace po = boost::program_options;
@@ -32,15 +31,17 @@ int main(int argc, char *argv[])
   
   if (vm.count("file"))
   {
+    HttpMonitor hm(vm["file"].as<string>(), 10);
+    hm.parseLog();
     //TODO change this
-    for(int i = 0; i < 10; i++)
-    {
-      // character code for celarning screen (same behavior as clear)
-      // I would want to extend this using ncurses with mroe time
-      cout << "\x1B[2J\x1B[H";
-      cout << vm["file"].as<string>() << i << endl;
-      this_thread::sleep_for(chrono::seconds(1));
-    }
+    // for(int i = 0; i < 10; i++)
+    // {
+    //   // character code for celarning screen (same behavior as clear)
+    //   // I would want to extend this using ncurses with mroe time
+    //   cout << "\x1B[2J\x1B[H";
+    //   cout << vm["file"].as<string>() << i << endl;
+    //   this_thread::sleep_for(chrono::seconds(1));
+    // }
   }
   
   return 0;
