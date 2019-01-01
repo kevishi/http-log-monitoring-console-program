@@ -33,7 +33,7 @@ CyclicBuffer<T>::CyclicBuffer(int size): m_maxSize(size), m_queue()
 template<typename T>
 std::experimental::optional<T> CyclicBuffer<T>::insert(T data)
 {
-    std::experimental::optional<T> poppedElement();
+    std::experimental::optional<T> poppedElement;
     if(m_curSize == m_maxSize && m_curSize != 0)
     {
         poppedElement = m_queue.front();
