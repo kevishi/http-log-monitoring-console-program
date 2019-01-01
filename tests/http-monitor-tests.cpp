@@ -1,4 +1,4 @@
-#include "../src/alert-buffer.h"
+#include "../src/http-monitor.h"
 #include <iostream>
 
 using namespace std;
@@ -77,6 +77,20 @@ void alertbuffer_alertLarge()
     AssertTrueRet(alert, __func__);
 }
 
+// CLF Parser Tests
+void clfparser_basicTest()
+{
+    string clf = "127.0.0.1 - james [09/May/2018:16:00:39 +0000] \"GET /report HTTP/1.0\" 200 123";
+    CLF parsedCLF = HttpMonitor::parseCLFLine(clf);
+    AssertTrueRet(
+        parsedCLF.addr.compare("127.0.0.1") == 0 &&
+        parsedCLF.user.compare("james") == 0 &&
+        parsedCLF.time.compare("09/May/2018:16:00:39 +0000") == 0 &&
+        parsedCLF.request.compare("GET /report HTTP/1.0") == 0 &&
+        parsedCLF.status == 200 &&
+        parsedCLF.size == 123, __func__);
+}
+
 // Main test driver
 // With more time I'd want to make this more customizable,
 // Run multiple times, run only certain tests, etc.
@@ -88,4 +102,5 @@ int main()
     alertbuffer_largeCorrectness();
     alertbuffer_alertBasic();
     alertbuffer_alertLarge();
+    clfparser_basicTest();
 }

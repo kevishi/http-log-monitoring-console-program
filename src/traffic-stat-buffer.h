@@ -13,7 +13,7 @@ namespace HttpMonitorHelper
         private:
             int m_totalTraffic = 0;
         public:
-            TrafficBuffer(int interval, int beat);
+            TrafficBuffer(int size);
 
             // TrafficBuffer::insert(data)
             //  Inserts data into buffer, updates traffic data

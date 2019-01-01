@@ -12,11 +12,10 @@ namespace HttpMonitorHelper
     //  Any additional T added will remove first added element
     //  0 size is undefined behavior
     //
-    //  interval, alertMin:
-    //  if the amount of traffic is greater than alertMin in interval (ms) it will send an alert
-    //  on insert
+    //  alertMin:
+    //  if the amount of traffic is greater than alertMin it will send an alert on insert
     //  
-    //  beat: size of the quantized unit of measurement and size of buffer
+    //  size: size of buffer
     class AlertBuffer:
         public CyclicBuffer<AlertUnit>
     {
