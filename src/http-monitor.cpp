@@ -6,7 +6,6 @@
 
 #include "cyclic-buffer.h"
 
-using namespace HttpMonitorHelper;
 using namespace std;
 namespace po = boost::program_options;
 
