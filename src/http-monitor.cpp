@@ -126,105 +126,26 @@ vector<pair<string,int>> getTop3(unordered_map<string, int> &map)
 
   return top3;
 }
+
+void printTop3(string category, unordered_map<string, int> &map)
+{
+  const char separator = ' ';
+  const int width = 20;
+
+  vector<pair<string, int>> top3 = getTop3(map);
+  cout << "Top " << category << "s:" << endl <<
+       left << setw(width) << setfill(separator) << category <<
+       left << setw(width) << setfill(separator) << "Requests" << endl;
+  int n = map.size() > 3 ? 3 : map.size();
+  for (int i = 1; i <= n; i++)
+  {
+    cout << i << ". " <<
+    left << setw(width) << setfill(separator) << top3[i-1].first <<
+    left << setw(width) << setfill(separator) << top3[i-1].second << endl;
+  }
+}
 // End Helpers
 
-
-void HttpMonitor::updateStats(CLF data)
-{
-  m_totalTraffic += data.isValid;
-
-  // top 3 sections
-  string section = getSection(data);
-  m_sectionCounts[section]++;
-
-  // top 3 users
-  m_userCounts[data.user]++;
-
-  // top 3 clients
-  m_addrCounts[data.addr]++;
-
-  // total success/error
-  m_totalSuccess += (data.status / 100 <= 3);
-  m_totalFail += (data.status / 100 > 3);
-
-  // largest/total request size
-  m_maxRequest = data.size > m_maxRequest ? data.size : m_maxRequest;
-  m_totalRequestSize += data.size;
-}
-
-
-void HttpMonitor::printStats()
-{
-    const char separator = ' ';
-    const int width = 20;
-
-  cout << "---- Stats for the past " << m_statTimeRange << " seconds -----" << endl;
-  // top 3 sections
-  vector<pair<string, int>> top3sections = getTop3(m_sectionCounts);
-  cout << "Top sections:" << endl <<
-       left << setw(width) << setfill(separator) << "Section " <<
-       left << setw(width) << setfill(separator) << " Requests" << endl;
-  int n = m_sectionCounts.size() > 3 ? 3 : m_sectionCounts.size();
-  for (int i = 1; i <= n; i++)
-  {
-    cout << i << ". " <<
-    left << setw(width) << setfill(separator) << top3sections[i-1].first <<
-    left << setw(width) << setfill(separator) << top3sections[i-1].second << endl;
-  }
-
-  // top 3 users
-  vector<pair<string, int>> top3users = getTop3(m_userCounts);
-  cout << "Top sections:" << endl <<
-       left << setw(width) << setfill(separator) << "User " <<
-       left << setw(width) << setfill(separator) << " Requests" << endl;
-  n = m_userCounts.size() > 3 ? 3 : m_userCounts.size();
-  for (int i = 1; i <= n; i++)
-  {
-    cout << i << ". " <<
-    left << setw(width) << setfill(separator) << top3users[i-1].first <<
-    left << setw(width) << setfill(separator) << top3users[i-1].second << endl;
-  }
-
-  // top 3 clients
-  vector<pair<string, int>> top3clients = getTop3(m_addrCounts);
-  cout << "Top sections:" << endl <<
-       left << setw(width) << setfill(separator) << "Client " <<
-       left << setw(width) << setfill(separator) << " Requests" << endl;
-  n = m_addrCounts.size() > 3 ? 3 : m_addrCounts.size();
-  for (int i = 1; i <= n; i++)
-  {
-    cout << i << ". " <<
-    left << setw(width) << setfill(separator) << top3clients[i-1].first <<
-    left << setw(width) << setfill(separator) << top3clients[i-1].second << endl;
-  }
-
-  // total success/error
-  if (m_totalTraffic > 0)
-  {
-    float percentSuccess = (float)m_totalSuccess / (float)m_totalTraffic;
-    cout << "Success%: " << percentSuccess * 100 <<"%"<< endl;
-  }
-
-  // largest/total request size
-  cout << "Largest Request size: " << m_maxRequest << " bytes" << endl;
-  if (m_totalTraffic > 0)
-  {
-    cout << "Average Request size: " << int((float)m_totalRequestSize / (float)m_totalTraffic) << " bytes" << endl;
-  }
-}
-
-void HttpMonitor::clearStats()
-{
-  int m_totalTraffic = 0;
-  int m_maxRequest = 0;
-  int m_totalRequestSize = 0;
-  int m_totalSuccess = 0;
-  int m_totalFail = 0;
-
-  m_sectionCounts.clear();
-  m_addrCounts.clear();
-  m_userCounts.clear();
-}
 
 void HttpMonitor::parseLog()
 {
@@ -312,4 +233,69 @@ void HttpMonitor::parseLog()
   }
   // Cleanup code that I would use if I was using polling
   logFile.close();
+}
+
+void HttpMonitor::updateStats(CLF data)
+{
+  m_totalTraffic += data.isValid;
+
+  // top 3 sections
+  string section = getSection(data);
+  m_sectionCounts[section]++;
+
+  // top 3 users
+  m_userCounts[data.user]++;
+
+  // top 3 clients
+  m_addrCounts[data.addr]++;
+
+  // total success/error
+  m_totalSuccess += (data.status / 100 <= 3);
+  m_totalFail += (data.status / 100 > 3);
+
+  // largest/total request size
+  m_maxRequest = data.size > m_maxRequest ? data.size : m_maxRequest;
+  m_totalRequestSize += data.size;
+}
+
+
+void HttpMonitor::printStats()
+{
+
+  cout << "---- Stats for the past " << m_statTimeRange << " seconds -----" << endl;
+  // top 3 sections
+  printTop3("Section", m_sectionCounts);
+
+  // top 3 users
+  printTop3("User", m_userCounts);
+
+  // top 3 clients
+  printTop3("Client", m_addrCounts);
+
+  // total success/error
+  if (m_totalTraffic > 0)
+  {
+    float percentSuccess = (float)m_totalSuccess / (float)m_totalTraffic;
+    cout << "Success%: " << percentSuccess * 100 <<"%"<< endl;
+  }
+
+  // largest/total request size
+  cout << "Largest Request size: " << m_maxRequest << " bytes" << endl;
+  if (m_totalTraffic > 0)
+  {
+    cout << "Average Request size: " << int((float)m_totalRequestSize / (float)m_totalTraffic) << " bytes" << endl;
+  }
+}
+
+void HttpMonitor::clearStats()
+{
+  int m_totalTraffic = 0;
+  int m_maxRequest = 0;
+  int m_totalRequestSize = 0;
+  int m_totalSuccess = 0;
+  int m_totalFail = 0;
+
+  m_sectionCounts.clear();
+  m_addrCounts.clear();
+  m_userCounts.clear();
 }
