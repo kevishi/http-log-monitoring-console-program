@@ -94,6 +94,27 @@ void clfparser_basicTest()
         parsedCLF.size == 123, __func__);
 }
 
+void clfparser_invalidFormatTest()
+{
+    string clf = "127.0.0.1 james [09/May/2018:16:00:39 +0000] \"GET /report HTTP/1.0\" 200 123";
+    CLF parsedCLF = HttpMonitor::parseCLFLine(clf);
+    AssertTrueRet(!parsedCLF.isValid, __func__);
+}
+
+void clfparser_invalidEmptyTest()
+{
+    string clf = "";
+    CLF parsedCLF = HttpMonitor::parseCLFLine(clf);
+    AssertTrueRet(!parsedCLF.isValid, __func__);
+}
+
+void clfparser_invalidStatusTest()
+{
+    string clf = "127.0.0.1 - james [09/May/2018:16:00:39 +0000] \"GET /report HTTP/1.0\" 2s00 123";
+    CLF parsedCLF = HttpMonitor::parseCLFLine(clf);
+    AssertTrueRet(!parsedCLF.isValid, __func__);
+}
+
 // Alert E2E Tests
 void e2e_runTest(int INTERVAL, int ALERTRANGE, int STATSRANGE, int ALERTMIN, int TIMEOUT, string TESTFILE,
     vector<string> STRINGS_TO_INSERT, vector<string> STRINGS_TO_FIND, string callingFunction)
@@ -122,6 +143,7 @@ void e2e_runTest(int INTERVAL, int ALERTRANGE, int STATSRANGE, int ALERTMIN, int
         {
             passed = (output.find(STRINGS_TO_FIND[i]) != string::npos) && passed;
         }
+
         assertTrue(passed, callingFunction);
     });
     
@@ -191,6 +213,35 @@ void alerter_basicRecoveryTest()
     e2e_runTest(INTERVAL, ALERTRANGE, STATSRANGE, ALERTMIN, TIMEOUT, TESTFILE, STRINGS_TO_INSERT, STRINGS_TO_FIND, callingFunction);    
 }
 
+void alerter_basicCorruptionTest()
+{
+    int INTERVAL = 1;
+    int ALERTRANGE = 12;
+    int STATSRANGE = 99999;
+    int ALERTMIN = 10;
+    int TIMEOUT = 15;
+    string TESTFILE = "tests/test.txt";
+    vector<string> STRINGS_TO_INSERT = {
+        "127.0.0.1 - james [09/May/2018:16:00:39 +0000] \"GET /report HTTP/1.0\" 200 123",
+        "127.0.0.1 - james [09/May/2018:16:00:39 +0000] \"GET /report HTTP/1.0\" 200 123",
+        "127.0.0.1 - james [09/May/2018:16:00:39 +0000] \"GET /report HTTP/1.0\" 200 123",
+        "127.0.0.1 - james [09/May/2018:16:00:39 +0000] \"GET /report HTTP/1.0\" 200 123",
+        "127.0.0.1 - james [09/May/2018:16:00:39 +0000] \"GET /report HTTP/1.0\" 200 123",
+        "127.0.0.1 - james [09/May/2018:16:00:39 +0000] \"GET /report HTTP/1.0\" 200 123",
+        "127.0.0.1 james [09/May/2018:16:00:39 +0000] \"GET /report HTTP/1.0\" 200 123",
+        "127.0.0.1 - james [09/May/2018:16:00:39 +0000] \"GET /report HTTP/1.0\" 200 123",
+        "127.0.0.1 - james [09/May/2018:16:00:39 +0000] \"GET /report HTTP/1.0\" 200 123",
+        "127.0.0.1 - james [09/May/2018:16:00:39 +0000] \"GET /report HTTP/1.0\" 200 123",
+        "127.0.0.1 - james [09/May/2018:16:00:39 +0000] \"GET /report HTTP/1.0\" 200 123",
+        "127.0.0.1 - james [09/May/2018:16:00:39 +0000] \"GET /report HTTP/1.0\" 200 123",
+        "127.0.0.1 - james [09/May/2018:16:00:39 +0000] \"GET /report HTTP/1.0\" 200 123"
+    };
+    vector<string> STRINGS_TO_FIND = { "High traffic generated an alert", "High traffic alert recovered at" };
+    string callingFunction = __func__;
+
+    e2e_runTest(INTERVAL, ALERTRANGE, STATSRANGE, ALERTMIN, TIMEOUT, TESTFILE, STRINGS_TO_INSERT, STRINGS_TO_FIND, callingFunction);    
+}
+
 // Stats E2E tests
 void stats_basicTest()
 {
@@ -218,6 +269,31 @@ void stats_basicTest()
     e2e_runTest(INTERVAL, ALERTRANGE, STATSRANGE, ALERTMIN, TIMEOUT, TESTFILE, STRINGS_TO_INSERT, STRINGS_TO_FIND, callingFunction);    
 }
 
+void stats_basicCorruptedLogTest()
+{
+    int INTERVAL = 1;
+    int ALERTRANGE = 12;
+    int STATSRANGE = 10;
+    int ALERTMIN = 10;
+    int TIMEOUT = 11;
+    string TESTFILE = "tests/test.txt";
+    vector<string> STRINGS_TO_INSERT = {
+        "127.0.0.1 - james [09/May/2018:16:00:39 +0000] \"GET /api HTTP/1.0\" 200 123",
+        "127.0.0.1frank [09/May/2018:16:00:42 +0000] \"POST /api/user HTTP/1.0\" 200 34",
+        "127.0.0.1 - mary [09/May/2018:16:00:42 +0000] \"POST /api/user HTTP/1.0\" 503 12"
+    };
+    vector<string> STRINGS_TO_FIND = {
+        "1. /api",
+        "Success%: 50%",
+        "1. 127.0.0.1",
+        "Largest Request size: 123 bytes",
+        "Average Request size: 67 bytes",
+        };
+    string callingFunction = __func__;
+
+    e2e_runTest(INTERVAL, ALERTRANGE, STATSRANGE, ALERTMIN, TIMEOUT, TESTFILE, STRINGS_TO_INSERT, STRINGS_TO_FIND, callingFunction);    
+}
+
 
 // Main test driver
 // With more time I'd want to make this more customizable,
@@ -233,5 +309,7 @@ int main()
     clfparser_basicTest();
     alerter_basicTest();
     alerter_basicRecoveryTest();
+    alerter_basicCorruptionTest();
     stats_basicTest();
+    stats_basicCorruptedLogTest();
 }
