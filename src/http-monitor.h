@@ -1,42 +1,58 @@
 #include "alert-buffer.h"
+#include "clf.h"
 #include <string>
 #include <chrono>
 #include <thread>
 #include <fstream>
+#include <unordered_map>
+#include <utility>
+#include <algorithm>
 
 using namespace std;
 
-struct CLF
-{
-  string addr;
-  string user;
-  string time;
-  string request;
-  int status;
-  int size;
-
-  bool isValid;
-};
-
 class HttpMonitor
 {
-    string m_filename;
-    
-    // Interval(secs): How often we want to refresh the log
-    int m_interval;
+    private:
+      string m_filename;
+      
+      // Interval(secs): How often we want to refresh the log
+      int m_interval;
 
-    // AlertTimeRange(secs): How big the window for alerts should be
-    int m_alertTimeRange;
+      // AlertTimeRange(secs): How big the window for alerts should be
+      int m_alertTimeRange;
 
-    // StatTimeRange(secs): How big the windows for stats should be
-    int m_statTimeRange;
+      // StatTimeRange(secs): How big the windows for stats should be
+      int m_statTimeRange;
 
-    // AlertMin: How many requests in AlertTimeRange before alerting
-    int m_alertMin;
+      // AlertMin: How many requests in AlertTimeRange before alerting
+      int m_alertMin;
 
-    // Timeout (secs): How long to monitor before exiting automatically
-    // -1 for infinite monitor
-    int m_timeout;
+      // Timeout (secs): How long to monitor before exiting automatically
+      // -1 for infinite monitor
+      int m_timeout;
+
+      // Stats tracked per statTimeRange
+      int m_totalTraffic = 0;
+      int m_maxRequest = 0;
+      int m_totalRequestSize = 0;
+      int m_totalSuccess = 0;
+      int m_totalFail = 0;
+
+      unordered_map<string, int> m_sectionCounts;
+      unordered_map<string, int> m_addrCounts;
+      unordered_map<string, int> m_userCounts;
+
+      //  UpdateStats:
+      //    Updates stats tracked per statTimeRange with data
+      void updateStats(CLF data);
+
+      //  PrintStats:
+      //    Prints stats tracked per statTimeRange
+      void printStats();
+
+      //  ClearStats:
+      //    Clears stats tracked per statTimeRange
+      void clearStats();
 
     public:
         HttpMonitor(string filename, int interval, int alertTimeRange, int statTimeRange, int alertMin, int timeout):
@@ -49,7 +65,7 @@ class HttpMonitor
         //  Parses log given by m_filename printing out stats and alerts as necessary
         void parseLog();
 
-        // ParseCLFLine
+        // ParseCLFLine:
         //  Creates a CLF object from parsing a string
         static CLF parseCLFLine(string line);
 };

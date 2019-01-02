@@ -4,7 +4,7 @@ using namespace HttpMonitorHelper;
 
 typedef std::experimental::optional<TrafficUnit> o_TrafficUnit;
 
-TrafficBuffer::TrafficBuffer(int size): CyclicBuffer(size)
+TrafficBuffer::TrafficBuffer(int interval): CyclicBuffer(interval)
 {
 }
 
