@@ -18,9 +18,9 @@ int main(int argc, char *argv[])
     ("help,h", "display help message")
     ("file", po::value<string>(), "HTTP access log. Default: /tmp/access.log")
     ("interval,i", po::value<int>(), "Tick rate (seconds). Default: 1 second")
-    ("alertrate,ar", po::value<int>(), "Alert rate (seconds). Default: 120 second")
-    ("alertthreshhold,at", po::value<int>(), "Alert threshhold (requests). Default: 10 requests")
-    ("statrate,sr", po::value<int>(), "Stats rate (seconds). Default: 10 second")
+    ("alertrate,r", po::value<int>(), "Alert rate (seconds). Default: 120 second")
+    ("alertthreshhold,t", po::value<int>(), "Alert threshhold (requests). Default: 10 requests")
+    ("statrate,s", po::value<int>(), "Stats rate (seconds). Default: 10 second")
   ;
   
   po::positional_options_description pDesc;
