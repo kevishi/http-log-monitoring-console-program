@@ -127,6 +127,8 @@ vector<pair<string,int>> getTop3(unordered_map<string, int> &map)
   return top3;
 }
 
+// PrintTop3:
+//  Prints top 3 elements by value from given map
 void printTop3(string category, unordered_map<string, int> &map)
 {
   const char separator = ' ';
@@ -211,7 +213,7 @@ void HttpMonitor::parseLog()
         this_thread::sleep_for(chrono::seconds(m_interval));
         trafficInInterval = 0;
 
-        // Keep interval for stats
+        // Check interval for stats
         numIntervals++;
         if (numIntervals >= maxStatInteval)
         {
@@ -231,7 +233,7 @@ void HttpMonitor::parseLog()
         }
       }
   }
-  // Cleanup code that I would use if I was using polling
+  // Only useful in timeout case
   logFile.close();
 }
 
