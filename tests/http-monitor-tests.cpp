@@ -95,7 +95,7 @@ void clfparser_basicTest()
 }
 
 // Alert E2E Tests
-void alerter_runTest(int INTERVAL, int ALERTRANGE, int STATSRANGE, int ALERTMIN, int TIMEOUT, string TESTFILE,
+void e2e_runTest(int INTERVAL, int ALERTRANGE, int STATSRANGE, int ALERTMIN, int TIMEOUT, string TESTFILE,
     vector<string> STRINGS_TO_INSERT, vector<string> STRINGS_TO_FIND, string callingFunction)
 {
     cout << "Running " << callingFunction << " for " << TIMEOUT << " seconds." << endl;
@@ -122,7 +122,6 @@ void alerter_runTest(int INTERVAL, int ALERTRANGE, int STATSRANGE, int ALERTMIN,
         {
             passed = (output.find(STRINGS_TO_FIND[i]) != string::npos) && passed;
         }
-
         assertTrue(passed, callingFunction);
     });
     
@@ -162,7 +161,7 @@ void alerter_basicTest()
     vector<string> STRINGS_TO_FIND = { "High traffic generated an alert" };
     string callingFunction = __func__;
 
-    alerter_runTest(INTERVAL, ALERTRANGE, STATSRANGE, ALERTMIN, TIMEOUT, TESTFILE, STRINGS_TO_INSERT, STRINGS_TO_FIND, callingFunction);    
+    e2e_runTest(INTERVAL, ALERTRANGE, STATSRANGE, ALERTMIN, TIMEOUT, TESTFILE, STRINGS_TO_INSERT, STRINGS_TO_FIND, callingFunction);    
 }
 
 void alerter_basicRecoveryTest()
@@ -189,8 +188,36 @@ void alerter_basicRecoveryTest()
     vector<string> STRINGS_TO_FIND = { "High traffic generated an alert", "High traffic alert recovered at" };
     string callingFunction = __func__;
 
-    alerter_runTest(INTERVAL, ALERTRANGE, STATSRANGE, ALERTMIN, TIMEOUT, TESTFILE, STRINGS_TO_INSERT, STRINGS_TO_FIND, callingFunction);    
+    e2e_runTest(INTERVAL, ALERTRANGE, STATSRANGE, ALERTMIN, TIMEOUT, TESTFILE, STRINGS_TO_INSERT, STRINGS_TO_FIND, callingFunction);    
 }
+
+// Stats E2E tests
+void stats_basicTest()
+{
+    int INTERVAL = 1;
+    int ALERTRANGE = 12;
+    int STATSRANGE = 10;
+    int ALERTMIN = 10;
+    int TIMEOUT = 11;
+    string TESTFILE = "tests/test.txt";
+    vector<string> STRINGS_TO_INSERT = {
+        "127.0.0.1 - james [09/May/2018:16:00:39 +0000] \"GET /report HTTP/1.0\" 200 123",
+        "127.0.0.1 - jill [09/May/2018:16:00:41 +0000] \"GET /api/user HTTP/1.0\" 200 234",
+        "127.0.0.1 - frank [09/May/2018:16:00:42 +0000] \"POST /api/user HTTP/1.0\" 200 34",
+        "127.0.0.1 - mary [09/May/2018:16:00:42 +0000] \"POST /api/user HTTP/1.0\" 503 12"
+    };
+    vector<string> STRINGS_TO_FIND = {
+        "1. /api",
+        "Success%: 75%",
+        "1. 127.0.0.1",
+        "Largest Request size: 234 bytes",
+        "Average Request size: 100 bytes",
+        };
+    string callingFunction = __func__;
+
+    e2e_runTest(INTERVAL, ALERTRANGE, STATSRANGE, ALERTMIN, TIMEOUT, TESTFILE, STRINGS_TO_INSERT, STRINGS_TO_FIND, callingFunction);    
+}
+
 
 // Main test driver
 // With more time I'd want to make this more customizable,
@@ -206,4 +233,5 @@ int main()
     clfparser_basicTest();
     alerter_basicTest();
     alerter_basicRecoveryTest();
+    stats_basicTest();
 }

@@ -95,7 +95,9 @@ void cancelAlert()
 string getSection(CLF data)
 {
   int posSection = data.request.find("/");
-  int posSectionEnd = data.request.find("/", posSection+1);
+  int posNextSection = data.request.find("/", posSection+1);
+  int posNextRequestPart = data.request.find(" ", posSection+1);
+  int posSectionEnd = posNextSection > posNextRequestPart ? posNextRequestPart : posNextSection;
   if(posSection != string::npos && posSectionEnd != string::npos)
   {
     return data.request.substr(posSection, posSectionEnd-posSection);
@@ -104,9 +106,12 @@ string getSection(CLF data)
   return "";
 }
 
+// GetTop3:
+//  Gets top 3 elements by value from given map
 vector<pair<string,int>> getTop3(unordered_map<string, int> &map)
 {
-  vector<pair<string, int>> top3(3);
+  int topk = map.size() >= 3 ? 3 : map.size();
+  vector<pair<string, int>> top3(topk);
   auto comp = [](pair<string,int> l, pair<string, int> r)
   {
     return l.second > r.second;
@@ -118,6 +123,8 @@ vector<pair<string,int>> getTop3(unordered_map<string, int> &map)
     top3.end(),
     comp
   );
+
+  return top3;
 }
 // End Helpers
 
@@ -137,8 +144,8 @@ void HttpMonitor::updateStats(CLF data)
   m_addrCounts[data.addr]++;
 
   // total success/error
-  m_totalSuccess += (data.status % 100 <= 3);
-  m_totalFail += (data.status % 100 > 3);
+  m_totalSuccess += (data.status / 100 <= 3);
+  m_totalFail += (data.status / 100 > 3);
 
   // largest/total request size
   m_maxRequest = data.size > m_maxRequest ? data.size : m_maxRequest;
@@ -148,42 +155,75 @@ void HttpMonitor::updateStats(CLF data)
 
 void HttpMonitor::printStats()
 {
+    const char separator = ' ';
+    const int width = 20;
+
   cout << "---- Stats for the past " << m_statTimeRange << " seconds -----" << endl;
   // top 3 sections
   vector<pair<string, int>> top3sections = getTop3(m_sectionCounts);
-  cout << "Top 3 sections:" << endl
-       << "Section \t\t\t Requests" << endl
-       << "1. " << top3sections[0].first << "\t\t\t" << top3sections[0].second << endl
-       << "2. " << top3sections[1].first << "\t\t\t" << top3sections[1].second << endl
-       << "3. " << top3sections[2].first << "\t\t\t" << top3sections[2].second << endl;
+  cout << "Top sections:" << endl <<
+       left << setw(width) << setfill(separator) << "Section " <<
+       left << setw(width) << setfill(separator) << " Requests" << endl;
+  int n = m_sectionCounts.size() > 3 ? 3 : m_sectionCounts.size();
+  for (int i = 1; i <= n; i++)
+  {
+    cout << i << ". " <<
+    left << setw(width) << setfill(separator) << top3sections[i-1].first <<
+    left << setw(width) << setfill(separator) << top3sections[i-1].second << endl;
+  }
 
   // top 3 users
   vector<pair<string, int>> top3users = getTop3(m_userCounts);
-  cout << "Top 3 users:" << endl
-       << "User \t\t\t Requests" << endl
-       << "1. " << top3users[0].first << "\t\t\t" << top3users[0].second << endl
-       << "2. " << top3users[1].first << "\t\t\t" << top3users[1].second << endl
-       << "3. " << top3users[2].first << "\t\t\t" << top3users[2].second << endl;
+  cout << "Top sections:" << endl <<
+       left << setw(width) << setfill(separator) << "User " <<
+       left << setw(width) << setfill(separator) << " Requests" << endl;
+  n = m_userCounts.size() > 3 ? 3 : m_userCounts.size();
+  for (int i = 1; i <= n; i++)
+  {
+    cout << i << ". " <<
+    left << setw(width) << setfill(separator) << top3users[i-1].first <<
+    left << setw(width) << setfill(separator) << top3users[i-1].second << endl;
+  }
 
   // top 3 clients
   vector<pair<string, int>> top3clients = getTop3(m_addrCounts);
-  cout << "Top 3 clients:" << endl
-       << "Client \t\t\t Requests" << endl
-       << "1. " << top3clients[0].first << "\t\t\t" << top3clients[0].second << endl
-       << "2. " << top3clients[1].first << "\t\t\t" << top3clients[1].second << endl
-       << "3. " << top3clients[2].first << "\t\t\t" << top3clients[2].second << endl;
+  cout << "Top sections:" << endl <<
+       left << setw(width) << setfill(separator) << "Client " <<
+       left << setw(width) << setfill(separator) << " Requests" << endl;
+  n = m_addrCounts.size() > 3 ? 3 : m_addrCounts.size();
+  for (int i = 1; i <= n; i++)
+  {
+    cout << i << ". " <<
+    left << setw(width) << setfill(separator) << top3clients[i-1].first <<
+    left << setw(width) << setfill(separator) << top3clients[i-1].second << endl;
+  }
 
   // total success/error
-  cout << "Success %:" <<  <<"%"<< endl;
+  if (m_totalTraffic > 0)
+  {
+    float percentSuccess = (float)m_totalSuccess / (float)m_totalTraffic;
+    cout << "Success%: " << percentSuccess * 100 <<"%"<< endl;
+  }
 
   // largest/total request size
-  cout << "Largest Request size: " << << " bytes" << endl;
-  cout << "Average Request size: " << << " bytes" << endl;
+  cout << "Largest Request size: " << m_maxRequest << " bytes" << endl;
+  if (m_totalTraffic > 0)
+  {
+    cout << "Average Request size: " << int((float)m_totalRequestSize / (float)m_totalTraffic) << " bytes" << endl;
+  }
 }
 
 void HttpMonitor::clearStats()
 {
+  int m_totalTraffic = 0;
+  int m_maxRequest = 0;
+  int m_totalRequestSize = 0;
+  int m_totalSuccess = 0;
+  int m_totalFail = 0;
 
+  m_sectionCounts.clear();
+  m_addrCounts.clear();
+  m_userCounts.clear();
 }
 
 void HttpMonitor::parseLog()
@@ -196,7 +236,7 @@ void HttpMonitor::parseLog()
   string line;
   int trafficInInterval = 0;
   int numIntervals = 0;
-  int maxStatInteval = m_statTimeRange / numIntervals < 1 ? 1 : m_statTimeRange / numIntervals;
+  int maxStatInteval = m_statTimeRange / m_interval < 1 ? 1 : m_statTimeRange / m_interval;
   bool inAlert = false;
   
   // ASSUMPTION: This logger is time agnostic and only cares about new log entries after file open

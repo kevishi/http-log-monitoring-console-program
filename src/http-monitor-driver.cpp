@@ -6,12 +6,21 @@
 using namespace std;
 namespace po = boost::program_options;
 
+const int INTERVAL_DEFAULT = 1;
+const int ALERT_RATE_DEFAULT = 120;
+const int ALERT_THRESHHOLD_DEFAULT = 10;
+const int STAT_RATE_DEFAULT = 10;
+
 int main(int argc, char *argv[])
 {
   po::options_description desc("Allowed options");
   desc.add_options()
     ("help,h", "display help message")
-    ("file", po::value<string>(), "HTTP access log")
+    ("file", po::value<string>(), "HTTP access log. Default: /tmp/access.log")
+    ("interval,i", po::value<int>(), "Tick rate (seconds). Default: 1 second")
+    ("alertrate, ar", po::value<int>(), "Alert rate (seconds). Default: 120 second")
+    ("alertthreshhold, at", po::value<int>(), "Alert threshhold (requests). Default: 10 requests")
+    ("statrate, sr", po::value<int>(), "Stats rate (seconds). Default: 10 second")
   ;
   
   po::positional_options_description pDesc;
@@ -29,20 +38,22 @@ int main(int argc, char *argv[])
     return 1;
   }
   
-  if (vm.count("file"))
+  string file = vm.count("file") ? vm["file"].as<string>() : "/tmp/access.log";
+  int interval = vm.count("interval") ? vm["interval"].as<int>() : INTERVAL_DEFAULT;
+  int alertrate = vm.count("alertrate") ? vm["alertrate"].as<int>() : ALERT_RATE_DEFAULT;
+  int alertthreshhold = vm.count("alertthreshhold") ? vm["alertthreshhold"].as<int>() : ALERT_THRESHHOLD_DEFAULT;
+  int statrate = vm.count("statrate") ? vm["statrate"].as<int>() : STAT_RATE_DEFAULT;
+
+  // Check for valid input
+  if (interval < 0 || alertrate < 0 || alertthreshhold < 0 || statrate < 0 || interval > alertrate || interval > statrate)
   {
-    HttpMonitor hm(vm["file"].as<string>(), 1, 12, 10, 10, -1);
-    hm.parseLog();
-    //TODO change this
-    // for(int i = 0; i < 10; i++)
-    // {
-    //   // character code for celarning screen (same behavior as clear)
-    //   // I would want to extend this using ncurses with mroe time
-    //   cout << "\x1B[2J\x1B[H";
-    //   cout << vm["file"].as<string>() << i << endl;
-    //   this_thread::sleep_for(chrono::seconds(1));
-    // }
+    cout << desc << endl;
+    return 1;
   }
+
+  // Run log parser
+  HttpMonitor hm(file, interval, alertrate, statrate, alertthreshhold, -1 /*timeout*/);
+  hm.parseLog();
   
   return 0;
 }
