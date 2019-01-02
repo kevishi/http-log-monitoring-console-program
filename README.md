@@ -9,11 +9,11 @@ Usage:
   
   -i [ --interval ] arg        Tick rate (seconds). Default: 1 second
   
-  -  [ --alertrate ] arg       Alert rate (seconds). Default: 120 second
+  -r  [ --alertrate ] arg       Alert rate (seconds). Default: 120 second
   
-  -  [ --alertthreshhold ] arg Alert threshhold (requests). Default: 10 requests
+  -t  [ --alertthreshhold ] arg Alert threshhold (requests). Default: 10 requests
   
-  -  [ --statrate ] arg        Stats rate (seconds). Default: 10 second
+  -s  [ --statrate ] arg        Stats rate (seconds). Default: 10 second
 
 Displays stats every Stats Rate seconds. Currently includes:
 1. Top k sections
