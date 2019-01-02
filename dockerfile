@@ -11,3 +11,5 @@ WORKDIR /workdir
 RUN ./build.sh
 RUN ./build-tests.sh
 RUN ./http-monitor-tests
+
+ENTRYPOINT ["./http-monitor"]
