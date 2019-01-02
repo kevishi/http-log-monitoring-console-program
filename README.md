@@ -14,6 +14,9 @@ Usage:
   -t  [ --alertthreshhold ] arg Alert threshhold (requests). Default: 10 requests
   
   -s  [ --statrate ] arg        Stats rate (seconds). Default: 10 second
+  
+Arguments less than or equal to 0 is undefined behavior.
+Intervals being longer than the alert rate or stats rate is also undefined behavior.
 
 Displays stats every Stats Rate seconds. Currently includes:
 1. Top k sections
