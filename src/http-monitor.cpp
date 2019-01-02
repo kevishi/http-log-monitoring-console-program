@@ -117,9 +117,10 @@ void HttpMonitor::parseLog()
       }
       else
       {
+        // Reached EOF for last interval
+        // Update stats/alert for last interval's traffic
         AlertUnit alertIntervalUnit;
         alertIntervalUnit.totalTraffic = trafficInInterval;
-        cout << trafficInInterval << endl;
         if (alertBuffer.insert(alertIntervalUnit))
         {
           if (!inAlert)
@@ -137,11 +138,14 @@ void HttpMonitor::parseLog()
           }
         }
 
+        // Wait one interval
         this_thread::sleep_for(chrono::seconds(m_interval));
         trafficInInterval = 0;
 
+        // Refresh file buffer
         logFile.clear();
         
+        // Check timeout
         auto end = chrono::steady_clock::now();
         if(m_timeout != -1 && chrono::duration_cast<chrono::seconds>(end - start).count() > m_timeout)
         {

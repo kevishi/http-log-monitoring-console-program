@@ -45,6 +45,11 @@ class HttpMonitor
           m_alertMin(alertMin), m_timeout(timeout)
         {
         }
+        // ParseLog: Main driver function
+        //  Parses log given by m_filename printing out stats and alerts as necessary
         void parseLog();
+
+        // ParseCLFLine
+        //  Creates a CLF object from parsing a string
         static CLF parseCLFLine(string line);
 };

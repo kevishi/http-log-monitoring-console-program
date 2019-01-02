@@ -1,6 +1,8 @@
 #include "../src/http-monitor.h"
 #include <iostream>
 #include <thread>
+#include <vector>
+#include <sstream>
 
 using namespace std;
 using namespace HttpMonitorHelper;
@@ -93,6 +95,49 @@ void clfparser_basicTest()
 }
 
 // Alert E2E Tests
+void alerter_runTest(int INTERVAL, int ALERTRANGE, int STATSRANGE, int ALERTMIN, int TIMEOUT, string TESTFILE,
+    vector<string> STRINGS_TO_INSERT, vector<string> STRINGS_TO_FIND, string callingFunction)
+{
+    cout << "Running " << callingFunction << " for " << TIMEOUT << " seconds." << endl;
+
+    thread t([INTERVAL, ALERTRANGE, STATSRANGE, ALERTMIN, TIMEOUT, TESTFILE, STRINGS_TO_FIND, callingFunction]{
+        HttpMonitor hm(TESTFILE, INTERVAL, ALERTRANGE, STATSRANGE, ALERTMIN, TIMEOUT);
+        
+        // Capture stdout
+        std::ostringstream ss;
+        std::streambuf *psbuf, *backup;
+        backup = std::cout.rdbuf();
+        psbuf = ss.rdbuf();
+        std::cout.rdbuf(psbuf);
+
+        // Perform log parsing
+        hm.parseLog();
+
+        // Restore stdout
+        std::cout.rdbuf(backup);
+
+        bool passed = true;
+        string output = ss.str();
+        for(int i = 0; i < STRINGS_TO_FIND.size(); i++)
+        {
+            passed = (output.find(STRINGS_TO_FIND[i]) != string::npos) && passed;
+        }
+
+        assertTrue(passed, callingFunction);
+    });
+    
+    this_thread::sleep_for(chrono::seconds(1));
+
+    ofstream outfile;
+    outfile.open(TESTFILE, std::ios_base::app);
+    for (int i = 0; i < STRINGS_TO_INSERT.size(); i++)
+    {
+        outfile << STRINGS_TO_INSERT[i] << endl;
+    }
+
+    t.join();
+}
+
 void alerter_basicTest()
 {
     int INTERVAL = 1;
@@ -100,12 +145,51 @@ void alerter_basicTest()
     int STATSRANGE = 99999;
     int ALERTMIN = 10;
     int TIMEOUT = 10;
-    thread t([INTERVAL, ALERTRANGE, STATSRANGE, ALERTMIN, TIMEOUT]{
-        HttpMonitor hm("tests/test.txt", INTERVAL, ALERTRANGE, STATSRANGE, ALERTMIN, TIMEOUT);
-        hm.parseLog();
-    });
-    
+    string TESTFILE = "tests/test.txt";
+    vector<string> STRINGS_TO_INSERT = {
+        "127.0.0.1 - james [09/May/2018:16:00:39 +0000] \"GET /report HTTP/1.0\" 200 123",
+        "127.0.0.1 - james [09/May/2018:16:00:39 +0000] \"GET /report HTTP/1.0\" 200 123",
+        "127.0.0.1 - james [09/May/2018:16:00:39 +0000] \"GET /report HTTP/1.0\" 200 123",
+        "127.0.0.1 - james [09/May/2018:16:00:39 +0000] \"GET /report HTTP/1.0\" 200 123",
+        "127.0.0.1 - james [09/May/2018:16:00:39 +0000] \"GET /report HTTP/1.0\" 200 123",
+        "127.0.0.1 - james [09/May/2018:16:00:39 +0000] \"GET /report HTTP/1.0\" 200 123",
+        "127.0.0.1 - james [09/May/2018:16:00:39 +0000] \"GET /report HTTP/1.0\" 200 123",
+        "127.0.0.1 - james [09/May/2018:16:00:39 +0000] \"GET /report HTTP/1.0\" 200 123",
+        "127.0.0.1 - james [09/May/2018:16:00:39 +0000] \"GET /report HTTP/1.0\" 200 123",
+        "127.0.0.1 - james [09/May/2018:16:00:39 +0000] \"GET /report HTTP/1.0\" 200 123",
+        "127.0.0.1 - james [09/May/2018:16:00:39 +0000] \"GET /report HTTP/1.0\" 200 123"
+    };
+    vector<string> STRINGS_TO_FIND = { "High traffic generated an alert" };
+    string callingFunction = __func__;
 
+    alerter_runTest(INTERVAL, ALERTRANGE, STATSRANGE, ALERTMIN, TIMEOUT, TESTFILE, STRINGS_TO_INSERT, STRINGS_TO_FIND, callingFunction);    
+}
+
+void alerter_basicRecoveryTest()
+{
+    int INTERVAL = 1;
+    int ALERTRANGE = 12;
+    int STATSRANGE = 99999;
+    int ALERTMIN = 10;
+    int TIMEOUT = 15;
+    string TESTFILE = "tests/test.txt";
+    vector<string> STRINGS_TO_INSERT = {
+        "127.0.0.1 - james [09/May/2018:16:00:39 +0000] \"GET /report HTTP/1.0\" 200 123",
+        "127.0.0.1 - james [09/May/2018:16:00:39 +0000] \"GET /report HTTP/1.0\" 200 123",
+        "127.0.0.1 - james [09/May/2018:16:00:39 +0000] \"GET /report HTTP/1.0\" 200 123",
+        "127.0.0.1 - james [09/May/2018:16:00:39 +0000] \"GET /report HTTP/1.0\" 200 123",
+        "127.0.0.1 - james [09/May/2018:16:00:39 +0000] \"GET /report HTTP/1.0\" 200 123",
+        "127.0.0.1 - james [09/May/2018:16:00:39 +0000] \"GET /report HTTP/1.0\" 200 123",
+        "127.0.0.1 - james [09/May/2018:16:00:39 +0000] \"GET /report HTTP/1.0\" 200 123",
+        "127.0.0.1 - james [09/May/2018:16:00:39 +0000] \"GET /report HTTP/1.0\" 200 123",
+        "127.0.0.1 - james [09/May/2018:16:00:39 +0000] \"GET /report HTTP/1.0\" 200 123",
+        "127.0.0.1 - james [09/May/2018:16:00:39 +0000] \"GET /report HTTP/1.0\" 200 123",
+        "127.0.0.1 - james [09/May/2018:16:00:39 +0000] \"GET /report HTTP/1.0\" 200 123"
+    };
+    vector<string> STRINGS_TO_FIND = { "High traffic generated an alert", "High traffic alert recovered at" };
+    string callingFunction = __func__;
+
+    alerter_runTest(INTERVAL, ALERTRANGE, STATSRANGE, ALERTMIN, TIMEOUT, TESTFILE, STRINGS_TO_INSERT, STRINGS_TO_FIND, callingFunction);    
 }
 
 // Main test driver
@@ -120,4 +204,6 @@ int main()
     alertbuffer_alertBasic();
     alertbuffer_alertLarge();
     clfparser_basicTest();
+    alerter_basicTest();
+    alerter_basicRecoveryTest();
 }
