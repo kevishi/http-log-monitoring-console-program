@@ -29,5 +29,7 @@ namespace HttpMonitorHelper
             //  Inserts data into buffer
             //  Returns true if the total traffic should trigger an alert
             bool insert(AlertUnit data);
+
+            int getTotalTraffic() { return m_totalTraffic; }
     };
 }

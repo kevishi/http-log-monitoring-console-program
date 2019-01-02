@@ -1,5 +1,6 @@
 #include "../src/http-monitor.h"
 #include <iostream>
+#include <thread>
 
 using namespace std;
 using namespace HttpMonitorHelper;
@@ -89,6 +90,22 @@ void clfparser_basicTest()
         parsedCLF.request.compare("GET /report HTTP/1.0") == 0 &&
         parsedCLF.status == 200 &&
         parsedCLF.size == 123, __func__);
+}
+
+// Alert E2E Tests
+void alerter_basicTest()
+{
+    int INTERVAL = 1;
+    int ALERTRANGE = 12;
+    int STATSRANGE = 99999;
+    int ALERTMIN = 10;
+    int TIMEOUT = 10;
+    thread t([INTERVAL, ALERTRANGE, STATSRANGE, ALERTMIN, TIMEOUT]{
+        HttpMonitor hm("tests/test.txt", INTERVAL, ALERTRANGE, STATSRANGE, ALERTMIN, TIMEOUT);
+        hm.parseLog();
+    });
+    
+
 }
 
 // Main test driver

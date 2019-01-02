@@ -31,7 +31,7 @@ int main(int argc, char *argv[])
   
   if (vm.count("file"))
   {
-    HttpMonitor hm(vm["file"].as<string>(), 10);
+    HttpMonitor hm(vm["file"].as<string>(), 1, 12, 10, 10, -1);
     hm.parseLog();
     //TODO change this
     // for(int i = 0; i < 10; i++)
