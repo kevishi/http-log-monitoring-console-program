@@ -108,13 +108,6 @@ void clfparser_invalidEmptyTest()
     AssertTrueRet(!parsedCLF.isValid(), __func__);
 }
 
-void clfparser_invalidStatusTest()
-{
-    string clf = "127.0.0.1 - james [09/May/2018:16:00:39 +0000] \"GET /report HTTP/1.0\" 2s00 123";
-    CLF parsedCLF(clf);
-    AssertTrueRet(!parsedCLF.isValid(), __func__);
-}
-
 // Alert E2E Tests
 void e2e_runTest(int INTERVAL, int ALERTRANGE, int STATSRANGE, int ALERTMIN, int TIMEOUT, string TESTFILE,
     vector<string> STRINGS_TO_INSERT, vector<string> STRINGS_TO_FIND, string callingFunction)
@@ -310,7 +303,6 @@ int main()
     clfparser_basicTest();
     clfparser_invalidEmptyTest();
     clfparser_invalidFormatTest();
-    clfparser_invalidStatusTest();
     alerter_basicTest();
     alerter_basicRecoveryTest();
     alerter_basicCorruptionTest();
