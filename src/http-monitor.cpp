@@ -3,152 +3,17 @@
 using namespace std;
 using namespace HttpMonitorHelper;
 
-// Helpers
-// ParseCLFLine:
-//  Creates a CLF object from parsing a string
-CLF HttpMonitor::parseCLFLine(string line)
-{
-  CLF data;
-  data.isValid = true;
-  
-  size_t addr = line.find(" - ");
-  if (addr != string::npos)
-  {
-    data.addr = line.substr(0, addr);
-  }
-  else
-  {
-    data.isValid = false;
-  }
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * 
+HttpMonitor::ParseLog:
 
-  size_t user = line.find(" [", addr + 3);
-  if (user != string::npos)
-  {
-    data.user = line.substr(addr + 3, user - (addr + 3));
-  }
-  else
-  {
-    data.isValid = false;
-  }
+  Main driver function
 
-  size_t ltime = line.find("] \"", user + 2);
-  if (ltime != string::npos)
-  {
-    data.time = line.substr(user + 2, ltime - (user + 2));
-  }
-  else
-  {
-    data.isValid = false;
-  }
+  Opens the file specfied in object and parses through any new lines
+  as CLF. Then keeps track of various statistics and keeps a moving
+  window for detection of high traffic. Prints out statistics and
+  alerts at construction defined times.
 
-  size_t req = line.find("\" ", ltime + 3);
-  if (req != string::npos)
-  {
-    data.request = line.substr(ltime + 3, req - (ltime + 3));
-  }
-  else
-  {
-    data.isValid = false;
-  }
-
-  size_t status = line.find(' ', req + 2);
-  if (status != string::npos)
-  {
-    try
-    {
-      data.status = stoi(line.substr(req + 2, status - (req + 2)));
-      data.size = stoi(line.substr(status + 1, line.size() - (status + 1)));
-    }
-    catch(...)
-    {
-      data.isValid = false;
-    }
-  }
-  else
-  {
-    data.isValid = false;
-  }
-
-  return data;
-}
-
-// Alert:
-//  Prints alert message for hits
-void alert(int hits)
-{
-  auto now = std::chrono::system_clock::now();
-  std::time_t cur_time = std::chrono::system_clock::to_time_t(now);
-  cout << "High traffic generated an alert - hits = " << hits << ", triggered at " << std::ctime(&cur_time);
-}
-
-// CancelAlert:
-//  Prints alert cancellation message
-void cancelAlert()
-{
-  auto now = std::chrono::system_clock::now();
-  std::time_t cur_time = std::chrono::system_clock::to_time_t(now);
-  cout << "High traffic alert recovered at " << std::ctime(&cur_time);
-}
-
-// GetSection:
-//  Gets section from CLF
-string getSection(CLF data)
-{
-  int posSection = data.request.find("/");
-  int posNextSection = data.request.find("/", posSection+1);
-  int posNextRequestPart = data.request.find(" ", posSection+1);
-  int posSectionEnd = posNextSection > posNextRequestPart ? posNextRequestPart : posNextSection;
-  if(posSection != string::npos && posSectionEnd != string::npos)
-  {
-    return data.request.substr(posSection, posSectionEnd-posSection);
-  }
-
-  return "";
-}
-
-// GetTop3:
-//  Gets top 3 elements by value from given map
-vector<pair<string,int>> getTop3(unordered_map<string, int> &map)
-{
-  int topk = map.size() >= 3 ? 3 : map.size();
-  vector<pair<string, int>> top3(topk);
-  auto comp = [](pair<string,int> l, pair<string, int> r)
-  {
-    return l.second > r.second;
-  };
-  partial_sort_copy(
-    map.begin(),
-    map.end(),
-    top3.begin(),
-    top3.end(),
-    comp
-  );
-
-  return top3;
-}
-
-// PrintTop3:
-//  Prints top 3 elements by value from given map
-void printTop3(string category, unordered_map<string, int> &map)
-{
-  const char separator = ' ';
-  const int width = 20;
-
-  vector<pair<string, int>> top3 = getTop3(map);
-  cout << "Top " << category << "s:" << endl <<
-       left << setw(width) << setfill(separator) << category <<
-       left << setw(width) << setfill(separator) << "Requests" << endl;
-  int n = map.size() > 3 ? 3 : map.size();
-  for (int i = 1; i <= n; i++)
-  {
-    cout << i << ". " <<
-    left << setw(width) << setfill(separator) << top3[i-1].first <<
-    left << setw(width) << setfill(separator) << top3[i-1].second << endl;
-  }
-}
-// End Helpers
-
-
+* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 void HttpMonitor::parseLog()
 {
   // This will be called on each quantized unit of time
@@ -156,6 +21,11 @@ void HttpMonitor::parseLog()
 
   AlertBuffer alertBuffer(m_alertTimeRange/m_interval, m_alertMin);
   ifstream logFile(m_filename);
+  if (!logFile)
+  {
+    cout << "While opening " << m_filename << " an error occurred." << endl;
+    return;
+  }
   string line;
   int trafficInInterval = 0;
   int numIntervals = 0;
@@ -176,8 +46,8 @@ void HttpMonitor::parseLog()
       {
         if (line.size() > 0)
         {
-          CLF parsedLine = parseCLFLine(line);
-          if (parsedLine.isValid)
+          CLF parsedLine(line);
+          if (parsedLine.isValid())
           {
             trafficInInterval++;
             updateStats(parsedLine);
@@ -239,25 +109,25 @@ void HttpMonitor::parseLog()
 
 void HttpMonitor::updateStats(CLF data)
 {
-  m_totalTraffic += data.isValid;
+  m_totalTraffic += data.isValid();
 
   // top 3 sections
-  string section = getSection(data);
+  string section = data.getSection();
   m_sectionCounts[section]++;
 
   // top 3 users
-  m_userCounts[data.user]++;
+  m_userCounts[data.getUser()]++;
 
   // top 3 clients
-  m_addrCounts[data.addr]++;
+  m_addrCounts[data.getAddr()]++;
 
   // total success/error
-  m_totalSuccess += (data.status / 100 <= 3);
-  m_totalFail += (data.status / 100 > 3);
+  m_totalSuccess += (data.getStatus() / 100 <= 3);
+  m_totalFail += (data.getStatus() / 100 > 3);
 
   // largest/total request size
-  m_maxRequest = data.size > m_maxRequest ? data.size : m_maxRequest;
-  m_totalRequestSize += data.size;
+  m_maxRequest = data.getSize() > m_maxRequest ? data.getSize() : m_maxRequest;
+  m_totalRequestSize += data.getSize();
 }
 
 
@@ -301,3 +171,65 @@ void HttpMonitor::clearStats()
   m_addrCounts.clear();
   m_userCounts.clear();
 }
+
+// Helpers
+
+// Alert:
+//  Prints alert message for hits
+void HttpMonitor::alert(int hits)
+{
+  auto now = std::chrono::system_clock::now();
+  std::time_t cur_time = std::chrono::system_clock::to_time_t(now);
+  cout << "High traffic generated an alert - hits = " << hits << ", triggered at " << std::ctime(&cur_time);
+}
+
+// CancelAlert:
+//  Prints alert cancellation message
+void HttpMonitor::cancelAlert()
+{
+  auto now = std::chrono::system_clock::now();
+  std::time_t cur_time = std::chrono::system_clock::to_time_t(now);
+  cout << "High traffic alert recovered at " << std::ctime(&cur_time);
+}
+
+// GetTop3:
+//  Gets top 3 elements by value from given map
+vector<pair<string,int>> HttpMonitor::getTop3(unordered_map<string, int> &map)
+{
+  int topk = map.size() >= 3 ? 3 : map.size();
+  vector<pair<string, int>> top3(topk);
+  auto comp = [](pair<string,int> l, pair<string, int> r)
+  {
+    return l.second > r.second;
+  };
+  partial_sort_copy(
+    map.begin(),
+    map.end(),
+    top3.begin(),
+    top3.end(),
+    comp
+  );
+
+  return top3;
+}
+
+// PrintTop3:
+//  Prints top 3 elements by value from given map
+void HttpMonitor::printTop3(string category, unordered_map<string, int> &map)
+{
+  const char separator = ' ';
+  const int width = 20;
+
+  vector<pair<string, int>> top3 = getTop3(map);
+  cout << "Top " << category << "s:" << endl <<
+       left << setw(width) << setfill(separator) << category <<
+       left << setw(width) << setfill(separator) << "Requests" << endl;
+  int n = map.size() > 3 ? 3 : map.size();
+  for (int i = 1; i <= n; i++)
+  {
+    cout << i << ". " <<
+    left << setw(width) << setfill(separator) << top3[i-1].first <<
+    left << setw(width) << setfill(separator) << top3[i-1].second << endl;
+  }
+}
+// End Helpers

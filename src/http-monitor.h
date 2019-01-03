@@ -55,6 +55,22 @@ class HttpMonitor
       //    Clears stats tracked per statTimeRange
       void clearStats();
 
+      // Alert:
+      //  Prints alert message for hits
+      static void alert(int hits);
+
+      // CancelAlert:
+      //  Prints alert cancellation message
+      static void cancelAlert();
+
+      // GetTop3:
+      //  Gets top 3 elements by value from given map
+      static vector<pair<string,int>> getTop3(unordered_map<string, int> &map);
+
+      // PrintTop3:
+      //  Prints top 3 elements by value from given map
+      static void printTop3(string category, unordered_map<string, int> &map);
+
     public:
         HttpMonitor(string filename, int interval, int alertTimeRange, int statTimeRange, int alertMin, int timeout):
           m_filename(filename), m_interval(interval),

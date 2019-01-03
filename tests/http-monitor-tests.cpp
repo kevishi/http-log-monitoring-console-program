@@ -10,7 +10,7 @@ using namespace HttpMonitorHelper;
 // Test helpers
 bool assertTrue(bool condition, string funcName)
 {
-    cout << funcName << (condition ? " passed!" : "failed") << endl;
+    cout << funcName << (condition ? " passed!" : " failed") << endl;
 
     return condition;
 }
@@ -83,36 +83,36 @@ void alertbuffer_alertLarge()
 // CLF Parser Tests
 void clfparser_basicTest()
 {
-    string clf = "127.0.0.1 - james [09/May/2018:16:00:39 +0000] \"GET /report HTTP/1.0\" 200 123";
-    CLF parsedCLF = HttpMonitor::parseCLFLine(clf);
+    string clfLine = "127.0.0.1 - james [09/May/2018:16:00:39 +0000] \"GET /report HTTP/1.0\" 200 123";
+    CLF parsedCLF(clfLine);
     AssertTrueRet(
-        parsedCLF.addr.compare("127.0.0.1") == 0 &&
-        parsedCLF.user.compare("james") == 0 &&
-        parsedCLF.time.compare("09/May/2018:16:00:39 +0000") == 0 &&
-        parsedCLF.request.compare("GET /report HTTP/1.0") == 0 &&
-        parsedCLF.status == 200 &&
-        parsedCLF.size == 123, __func__);
+        parsedCLF.getAddr().compare("127.0.0.1") == 0 &&
+        parsedCLF.getUser().compare("james") == 0 &&
+        parsedCLF.getTime().compare("09/May/2018:16:00:39 +0000") == 0 &&
+        parsedCLF.getRequest().compare("GET /report HTTP/1.0") == 0 &&
+        parsedCLF.getStatus() == 200 &&
+        parsedCLF.getSize() == 123, __func__);
 }
 
 void clfparser_invalidFormatTest()
 {
-    string clf = "127.0.0.1 james [09/May/2018:16:00:39 +0000] \"GET /report HTTP/1.0\" 200 123";
-    CLF parsedCLF = HttpMonitor::parseCLFLine(clf);
-    AssertTrueRet(!parsedCLF.isValid, __func__);
+    string clfLine = "127.0.0.1 james [09/May/2018:16:00:39 +0000] \"GET /report HTTP/1.0\" 200 123";
+    CLF parsedCLF(clfLine);
+    AssertTrueRet(!parsedCLF.isValid(), __func__);
 }
 
 void clfparser_invalidEmptyTest()
 {
     string clf = "";
-    CLF parsedCLF = HttpMonitor::parseCLFLine(clf);
-    AssertTrueRet(!parsedCLF.isValid, __func__);
+    CLF parsedCLF(clf);
+    AssertTrueRet(!parsedCLF.isValid(), __func__);
 }
 
 void clfparser_invalidStatusTest()
 {
     string clf = "127.0.0.1 - james [09/May/2018:16:00:39 +0000] \"GET /report HTTP/1.0\" 2s00 123";
-    CLF parsedCLF = HttpMonitor::parseCLFLine(clf);
-    AssertTrueRet(!parsedCLF.isValid, __func__);
+    CLF parsedCLF(clf);
+    AssertTrueRet(!parsedCLF.isValid(), __func__);
 }
 
 // Alert E2E Tests
@@ -147,10 +147,10 @@ void e2e_runTest(int INTERVAL, int ALERTRANGE, int STATSRANGE, int ALERTMIN, int
         assertTrue(passed, callingFunction);
     });
     
-    this_thread::sleep_for(chrono::seconds(1));
-
     ofstream outfile;
     outfile.open(TESTFILE, std::ios_base::app);
+
+    this_thread::sleep_for(chrono::seconds(2));
     for (int i = 0; i < STRINGS_TO_INSERT.size(); i++)
     {
         outfile << STRINGS_TO_INSERT[i] << endl;
@@ -168,6 +168,7 @@ void alerter_basicTest()
     int TIMEOUT = 10;
     string TESTFILE = "tests/test.txt";
     vector<string> STRINGS_TO_INSERT = {
+        "127.0.0.1 - james [09/May/2018:16:00:39 +0000] \"GET /report HTTP/1.0\" 200 123",
         "127.0.0.1 - james [09/May/2018:16:00:39 +0000] \"GET /report HTTP/1.0\" 200 123",
         "127.0.0.1 - james [09/May/2018:16:00:39 +0000] \"GET /report HTTP/1.0\" 200 123",
         "127.0.0.1 - james [09/May/2018:16:00:39 +0000] \"GET /report HTTP/1.0\" 200 123",
@@ -307,6 +308,9 @@ int main()
     alertbuffer_alertBasic();
     alertbuffer_alertLarge();
     clfparser_basicTest();
+    clfparser_invalidEmptyTest();
+    clfparser_invalidFormatTest();
+    clfparser_invalidStatusTest();
     alerter_basicTest();
     alerter_basicRecoveryTest();
     alerter_basicCorruptionTest();
